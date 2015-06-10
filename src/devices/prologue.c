@@ -64,4 +64,5 @@ r_device prologue = {
     /* .long_limit     = */ 7000/4,
     /* .reset_limit    = */ 15000/4,
     /* .json_callback  = */ &prologue_callback,
+    /* .disabled       = */ 0
 };

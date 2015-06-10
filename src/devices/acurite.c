@@ -72,6 +72,12 @@ static int acurite_getRainfallCounter (uint8_t hibyte, uint8_t lobyte) {
     return raincounter;
 }
 
+int windspeed = 0;
+float temp = 0.0;
+float winddirection = 0.0;
+int humidity = 0;
+float rainfall = 0.0;
+
 static int acurite5n1_callback(uint8_t bb[BITBUF_ROWS][BITBUF_COLS],int16_t bits_per_row[BITBUF_ROWS]) {
     // acurite 5n1 weather sensor decoding for rtl_433
     // Jens Jensen 2014
@@ -106,22 +112,24 @@ static int acurite5n1_callback(uint8_t bb[BITBUF_ROWS][BITBUF_COLS],int16_t bits
                 // capture starting counter
                 acurite_raincounter = raincounter;
             }
+            windspeed = acurite_getWindSpeed(buf[3], buf[4]);
+            winddirection = acurite_getWindDirection(buf[4]);
 
-            fprintf(stdout, "wind speed: %d kph, ",
-                acurite_getWindSpeed(buf[3], buf[4]));
-            fprintf(stdout, "wind direction: %0.1f°, ",
-                acurite_getWindDirection(buf[4]));
+            fprintf(stdout, "wind speed: %d kph, ", windspeed);
+	    fprintf(stdout, "wind direction: %0.1f°, ", winddirection);
             fprintf(stdout, "rain gauge: %0.2f in.\n", rainfall);
 
         } else if ((buf[2] & 0x0F) == 8) {
             // wind speed, temp, RH
-            fprintf(stdout, "wind speed: %d kph, ",
-                acurite_getWindSpeed(buf[3], buf[4]));
-            fprintf(stdout, "temp: %2.1f° F, ",
-                acurite_getTemp(buf[4], buf[5]));
-            fprintf(stdout, "humidity: %d%% RH\n",
-                acurite_getHumidity(buf[6]));
+            windspeed = acurite_getWindSpeed(buf[3], buf[4]);
+            temp = acurite_getTemp(buf[4], buf[5]);   
+            humidity = acurite_getHumidity(buf[6]);
+
+            fprintf(stdout, "wind speed: %d kph, ", windspeed);
+            fprintf(stdout, "temp: %2.1f° F, ", temp);
+            fprintf(stdout, "humidity: %d%% RH\n", humidity);
         }
+	log_json(temp, humidity, windspeed, winddirection, rainfall);
     } else {
     	return 0;
     }
@@ -131,6 +139,7 @@ static int acurite5n1_callback(uint8_t bb[BITBUF_ROWS][BITBUF_COLS],int16_t bits
 
     return 1;
 }
+
 
 static int acurite_rain_gauge_callback(uint8_t bb[BITBUF_ROWS][BITBUF_COLS], int16_t bits_per_row[BITBUF_ROWS]) {
     // This needs more validation to positively identify correct sensor type, but it basically works if message is really from acurite raingauge and it doesn't have any errors
@@ -182,6 +191,7 @@ r_device acurite5n1 = {
     /* .long_limit     = */ 240,
     /* .reset_limit    = */ 21000,
     /* .json_callback  = */ &acurite5n1_callback,
+    /* .disabled       = */ 0
 };
 
 r_device acurite_rain_gauge = {
@@ -192,6 +202,7 @@ r_device acurite_rain_gauge = {
     /* .long_limit     = */ 3500/4,
     /* .reset_limit    = */ 5000/4,
     /* .json_callback  = */ &acurite_rain_gauge_callback,
+    /* .disabled       = */ 0
 };
 
 r_device acurite_th = {
@@ -202,4 +213,5 @@ r_device acurite_th = {
     /* .long_limit     = */ 550,
     /* .reset_limit    = */ 2500,
     /* .json_callback  = */ &acurite_th_callback,
+    /* .disabled       = */ 0
 };

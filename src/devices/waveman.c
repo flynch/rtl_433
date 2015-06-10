@@ -37,4 +37,5 @@ r_device waveman = {
     /* .long_limit     = */ 8000/4,
     /* .reset_limit    = */ 30000/4,
     /* .json_callback  = */ &waveman_callback,
+    /* .disabled       = */ 0
 };

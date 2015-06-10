@@ -160,4 +160,5 @@ r_device alectov1 = {
     /* .long_limit     = */ 7000 / 4, //1750
     /* .reset_limit    = */ 15000 / 4, //3750
     /* .json_callback  = */ &alectov1_callback,
+    /* .disabled       = */ 0
 };

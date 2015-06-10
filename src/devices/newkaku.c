@@ -124,4 +124,5 @@ r_device newkaku = {
     /* .long_limit     = */ 800,
     /* .reset_limit    = */ 4000,
     /* .json_callback  = */ &newkaku_callback,
+    /* .disabled       = */ 0
 };

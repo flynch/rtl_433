@@ -197,4 +197,6 @@ r_device lacrossetx = {
 /* .short_limit    = */238,
 /* .long_limit     = */750,
 /* .reset_limit    = */8000,
-/* .json_callback  = */&lacrossetx_callback, };
+/* .json_callback  = */&lacrossetx_callback, 
+/* .disabled       = */ 0
+};

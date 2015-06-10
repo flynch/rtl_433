@@ -42,5 +42,5 @@
 
 extern int debug_output;
 int debug_callback(uint8_t buffer[BITBUF_ROWS][BITBUF_COLS], int16_t bits_per_row[BITBUF_ROWS]);
-
+void log_json(float temp, int humidity, int windspeed, float winddirection, float rainfall);
 #endif /* INCLUDE_RTL_433_H_ */

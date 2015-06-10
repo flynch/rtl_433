@@ -369,4 +369,5 @@ r_device oregon_scientific = {
     /* .long_limit     = */ 0, // not used
     /* .reset_limit    = */ 600,
     /* .json_callback  = */ &oregon_scientific_callback,
+    /* .disabled       = */ 0
 };

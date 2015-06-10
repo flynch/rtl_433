@@ -57,5 +57,6 @@ r_device nexus = {
     /* .long_limit     = */ 3500/4,
     /* .reset_limit    = */ 5000/4,
     /* .json_callback  = */ &nexus_callback,
+    /* .disabled       = */ 0
 };
 

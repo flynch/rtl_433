@@ -55,5 +55,6 @@ r_device rubicson = {
     /* .long_limit     = */ 3500/4,
     /* .reset_limit    = */ 5000/4,
     /* .json_callback  = */ &rubicson_callback,
+    /* .disabled       = */ 0
 };
 

@@ -22,7 +22,16 @@
 
 #include "rtl-sdr.h"
 #include "rtl_433.h"
+#include <sys/time.h>
+#include <onion/onion.h>
+#include <onion/dict.h>
+#include <onion/block.h>
+#include <onion/request.h>
+#include <onion/response.h>
+#include <onion/url.h>
+#include <pthread.h>
 
+static char* json_file_path = 0;
 static int do_exit = 0;
 static int do_exit_async = 0, frequencies = 0, events = 0;
 uint32_t frequency[MAX_PROTOCOLS];
@@ -37,6 +46,61 @@ static int override_long = 0;
 int debug_output = 0;
 
 int num_r_devices = 0;
+
+pthread_mutex_t lock;
+float g_temp = 0.0;
+int g_humidity = 0;
+int g_windspeed = 0;
+float g_winddirection = 0.0;
+float g_rainfall = 0.0;
+
+void log_json(float temp, int humidity, int windspeed, float winddirection, float rainfall) {
+  pthread_mutex_lock(&lock);
+  g_temp = temp;
+  g_humidity = humidity;
+  g_windspeed = windspeed;
+  g_winddirection = winddirection;
+  g_rainfall = rainfall;
+  pthread_mutex_unlock(&lock);  
+}
+
+onion_connection_status weather_json(void *_, onion_request *req, onion_response *res) {
+  onion_dict *jres = onion_dict_new();
+  char buf[48];
+  float l_temp = 0.0;
+  int l_humidity = 0;
+  int l_windspeed = 0;
+  float l_winddirection = 0.0;
+  float l_rainfall = 0.0;
+
+  pthread_mutex_lock(&lock);
+  l_temp = g_temp;
+  l_humidity = g_humidity;
+  l_windspeed = g_windspeed;
+  l_winddirection = g_winddirection;
+  l_rainfall = g_rainfall;
+  pthread_mutex_unlock(&lock);
+
+  snprintf(buf, sizeof(buf), "%.0f", g_temp);
+  onion_dict_add(jres, "temp", buf, OD_DUP_VALUE);
+  snprintf(buf, sizeof(buf), "%d", g_humidity);
+  onion_dict_add(jres, "humidity", buf, OD_DUP_VALUE);
+  snprintf(buf, sizeof(buf), "%d", g_windspeed);
+  onion_dict_add(jres, "windSpeed", buf, OD_DUP_VALUE);
+  snprintf(buf, sizeof(buf), "%.1f", g_winddirection);
+  onion_dict_add(jres, "windDirection", buf, OD_DUP_VALUE);
+  snprintf(buf, sizeof(buf), "%.1f", g_rainfall);
+  onion_dict_add(jres, "rainFall", buf, OD_DUP_VALUE);
+  
+  onion_block* jresb = onion_dict_to_json(jres);
+  onion_response_write(res, onion_block_data(jresb), onion_block_size(jresb));
+  onion_block_free(jresb);
+  onion_dict_free(jres);
+
+  return OCS_PROCESSED;
+}
+
+
 
 int debug_callback(uint8_t bb[BITBUF_ROWS][BITBUF_COLS], int16_t bits_per_row[BITBUF_ROWS]) {
     int i,j,k;
@@ -158,6 +222,7 @@ void usage(r_device *devices) {
             "\t[-t signal auto save, use it together with analyze mode (-a -t)\n"
             "\t[-l change the detection level used to determine pulses (0-3200) default: %i]\n"
             "\t[-f [-f...] receive frequency[s], default: %i Hz]\n"
+            "\t[-j path to json output file]\n"
             "\t[-s sample rate (default: %i Hz)]\n"
             "\t[-S force sync output (default: async)]\n"
             "\t[-r read data from file instead of from a receiver]\n"
@@ -326,8 +391,9 @@ static void classify_signal() {
     unsigned int delta, count_min, count_max, min_new, max_new, p_limit;
     unsigned int a[3], b[2], a_cnt[3], a_new[3], b_new[2];
     unsigned int signal_distance_data[4000] = {0};
-    struct protocol_state p = {0};
+    struct protocol_state p;
     unsigned int signal_type;
+    memset(&p, 0, sizeof(p));
 
     if (!signal_pulse_data[0][0])
         return;
@@ -986,6 +1052,13 @@ int main(int argc, char **argv) {
     int device_count;
     char vendor[256], product[256], serial[256];
     int have_opt_R = 0;
+    onion *o = onion_new(O_DETACH_LISTEN);
+    onion_url *url = onion_root_url(o);
+    onion_set_timeout(o, 5000);
+    onion_set_hostname(o,"0.0.0.0");
+    onion_set_port(o, "8189");
+    onion_url_add(url, "", weather_json);
+    onion_listen(o);
 
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
@@ -1009,7 +1082,7 @@ int main(int argc, char **argv) {
     demod->level_limit = DEFAULT_LEVEL_LIMIT;
 
 
-    while ((opt = getopt(argc, argv, "x:z:p:Dtam:r:c:l:d:f:g:s:b:n:SR:")) != -1) {
+    while ((opt = getopt(argc, argv, "x:z:p:Dtam:r:c:l:d:f:g:j:s:b:n:SR:")) != -1) {
         switch (opt) {
             case 'd':
                 dev_index = atoi(optarg);
@@ -1020,6 +1093,9 @@ int main(int argc, char **argv) {
                 break;
             case 'g':
                 gain = (int) (atof(optarg) * 10); /* tenths of a dB */
+                break;
+            case 'j':
+	        json_file_path = optarg;
                 break;
             case 'p':
                 ppm_error = atoi(optarg);

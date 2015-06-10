@@ -152,4 +152,5 @@ r_device ambient_weather = {
     /* .long_limit     = */ 0, // not used
     /* .reset_limit    = */ 600,
     /* .json_callback  = */ &ambient_weather_callback,
+    /* .disabled       = */ 0
 };

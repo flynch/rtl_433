@@ -104,6 +104,7 @@ r_device fineoffset_WH2 = {
     /* .long_limit     = */ 700,	// Maximum pulse period (long pulse + fixed gap)
     /* .reset_limit    = */ 700,	// We just want 1 package
     /* .json_callback  = */ &fineoffset_WH2_callback,
+    /* .disabled       = */ 0
 };
 
 

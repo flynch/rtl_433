@@ -43,4 +43,5 @@ r_device steffen = {
     /* .long_limit     = */ 270,
     /* .reset_limit    = */ 1500,
     /* .json_callback  = */ &steffen_callback,
+    /* .disabled       = */ 0
 };

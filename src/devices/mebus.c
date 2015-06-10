@@ -46,4 +46,5 @@ r_device mebus433 = {
     /* .reset_limit    = */ 1500,
     /* .json_callback  = */ &mebus433_callback,
     /* .json_callback  = */ //&debug_callback,
+    /* .disabled       = */ 0
 };
